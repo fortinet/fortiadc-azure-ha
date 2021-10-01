@@ -1,0 +1,22 @@
+name: fortiadc-azure-ha
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  build:
+    name: build-adc-azure-ha
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: create-templates-zip
+        run: zip -r ./templates/templates.zip ./templates/*
+      - name: upload-templates-zip
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          file: ./templates/templates.zip
+          asset_name: fortiadc-ha-azure-templates.zip
+          tag: ${{github.ref}}
+          overwrite: true
+          body: "FortiADC Azure HA Release"
