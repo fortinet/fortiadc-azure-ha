@@ -54,13 +54,15 @@
             "allowedValues":[
                 "Standard_F2s_v2",
                 "Standard_F4s_v2",
-                "Standard_F8s_v2"
+                "Standard_F8s_v2",
+                "Standard_F16s_v2",
+                "Standard_F32s_v2"
             ],
             "metadata": {
                 "description": "Size of VM in the FortiADC set VM instances"
             }
         },
-        "vmAdminUsername": {
+        "FADAdminUsername": {
             "minLength": 3,
             "maxLength": 63,
             "type": "string",
@@ -68,14 +70,14 @@
                 "description": "Admin username for all FortiADC VM instances in the template. Must not be 'admin' nor 'root' and must be 3-63 characters in length."
             }
         },
-        "vmAdminPassword": {
+        "FADAdminPassword": {
             "type": "securestring",
             "defaultValue":"",
             "metadata": {
                 "description": "Password must be between 6-72 characters long and must satisfy at least 3 of password complexity requirements from the following:  1) Contains an uppercase character; 2) Contains a lowercase character;  3) Contains a numeric digit;  4) Contains a special character;  5) Control characters are not allowed."
             }
         },
-        "vmImageType":{
+        "FADImageType":{
             "defaultValue":"fad-vm-byol",
             "type":"String",
             "metadata":{
@@ -90,7 +92,7 @@
 				"fortinet-fad-vm_payg-1gbps"
             ]
         },
-        "vmImageVersion":{
+        "FADImageVersion":{
             "defaultValue":"latest",
             "type":"String",
             "metadata":{
@@ -100,7 +102,7 @@
                 "latest"
             ]
         },
-        "vmCount":{
+        "FADCount":{
             "type":"int",
             "defaultValue": 2,
             "minValue": 1,
@@ -231,7 +233,7 @@
         "storageAccountName":{
             "type": "string",
             "metadata": {
-                "description": "Name of the storage account."
+                "description": "Name of the storage account. Used for serial console and for license if BYOL is selected as imageType"
             }
         },
         "storageLicenseContainerName":{
@@ -300,7 +302,7 @@
             "copy":[
                 {
                     "name":"customDataInit",
-                    "count":"[parameters('vmCount')]",
+                    "count":"[parameters('FADCount')]",
                     "input":{
                         "HaAzureInit":"enable",
                         "HaResourceGroupName":"[resourceGroup().name]",
@@ -310,7 +312,7 @@
                         "HaApplicationPassword":"[parameters('restappSecret')]",
                         "HaRegion":"[parameters('region')]",
                         "HaLoadblancerName":"[variables('externalLBName')]",
-                        "HaInstanceCount":"[parameters('vmCount')]",
+                        "HaInstanceCount":"[parameters('FADCount')]",
                         "HaInstanceId":"[copyIndex('customDataInit', 1)]",
                         "HaNamePrefix":"[parameters('resourceNamePrefix')]",
                         "HaInstanceName":"[concat(variables('vmNamePrefix'), copyIndex('customDataInit', 1))]",
@@ -325,15 +327,15 @@
             ]
         },
         "vmImagePlan":{
-            "name": "[parameters('vmImageType')]",
+            "name": "[parameters('FADImageType')]",
             "product": "fortinet-fortiadc",
             "publisher": "fortinet"
         },
         "imageReference": {
             "publisher": "fortinet",
             "offer": "fortinet-fortiadc",
-            "sku": "[parameters('vmImageType')]",
-            "version": "[parameters('vmImageVersion')]"
+            "sku": "[parameters('FADImageType')]",
+            "version": "[parameters('FADImageVersion')]"
         }
     },
     "functions":[
@@ -459,7 +461,7 @@
             ],
             "copy":{
                 "name":"nicloop",
-                "count":"[parameters('vmCount')]"
+                "count":"[parameters('FADCount')]"
             }
         },
         {
@@ -584,7 +586,7 @@
             },
             "copy":{
                 "name":"PublicIPCopy",
-                "count":"[parameters('vmCount')]"
+                "count":"[parameters('FADCount')]"
             }
         },
         {
@@ -638,7 +640,7 @@
                             "protocol": "Tcp",
                             "frontendPort": 80,
                             "backendPort": 80,
-                            "enableFloatingIP": true,
+                            "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 4,
                             "probe": {
                                 "id": "[concat(variables('externalLBResourceId'),'/probes/tcpProbe')]"
@@ -657,7 +659,7 @@
                         "protocol": "Tcp",
                         "frontendPort": 443,
                         "backendPort": 443,
-                        "enableFloatingIP": true,
+                        "enableFloatingIP": false,
                         "idleTimeoutInMinutes": 4,
                         "probe": {
                             "id": "[concat(variables('externalLBResourceId'),'/probes/tcpProbe1')]"
@@ -718,7 +720,7 @@
                             "protocol": "all",
                             "frontendPort": 0,
                             "backendPort": 0,
-                            "loadDistribution":"SourceIPProtocol",
+                            "loadDistribution":"Default",
                             "enableFloatingIP": false,
                             "idleTimeoutInMinutes": 15
                         },
@@ -794,9 +796,9 @@
                         }
                     },
                     {
-                        "name": "allowManageHTTP",
+                        "name": "allowHTTP1",
                         "properties": {
-                            "description": "Allow http web management flow",
+                            "description": "Allow http business flow",
                             "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "8080",
@@ -808,9 +810,9 @@
                         }
                     },
                     {
-                        "name": "allowManageHTTPs",
+                        "name": "allowHTTPs2",
                         "properties": {
-                            "description": "Allow https web management flow",
+                            "description": "Allow https business flow",
                             "protocol": "Tcp",
                             "sourcePortRange": "*",
                             "destinationPortRange": "8443",
@@ -846,7 +848,7 @@
             },
             "copy":{
                  "name":"InstanceCopy",
-                 "count":"[parameters('vmCount')]"
+                 "count":"[parameters('FADCount')]"
             },
 
             "properties": {
@@ -872,8 +874,8 @@
                 },
                 "osProfile": {
                     "computerName": "[concat(variables('vmNamePrefix'), copyindex(1))]",
-                    "adminUsername": "[parameters('vmAdminUserName')]",
-                    "adminPassword": "[parameters('vmAdminPassword')]",
+                    "adminUsername": "[parameters('FADAdminUserName')]",
+                    "adminPassword": "[parameters('FADAdminPassword')]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": false
                     },
