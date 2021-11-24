@@ -28,7 +28,7 @@ Introduced in the FortiADC 6.2.0 release, the method of using Azure Load Balance
 Previously, VRRP HA on Azure used the API call to Azure to migrate the public IPs associated with the FortiADC-VM on the Azure backend in the event of HA failover. The IP migration process may take several minutes during the HA failover, causing business traffic to break until the migration is complete. With using Azure Load Balancers, the downtime for the FortiADC member may only be seconds during the HA failover because it does not require IP migration.
 
 
-# Before You Begin
+## Before You Begin
 
 You need to meet the following prerequisites to deploy HA on Azure:
 - A Microsoft Azure account that can be used to log into the Azure portal. If you do not have an Azure
@@ -164,9 +164,9 @@ The Azure LB Backend configuration is an independent configuration on all FortiA
 Therefore, when an HA failover occurs, the traffic will be directed to the new working (active) FortiADC by the ALB.
 
 
-## Deploying VRRP HA using Azure load balancers via the ARM template
+### Deploying VRRP HA using Azure load balancers via the ARM template
 
-### HeadingConfiguring the ARM template deployment parameters
+#### Configuring the ARM template deployment parameters
 After you have successfully launched your ARM template, configure the following parameters to complete the ARM template deployment.
 1. In the Azure Custom deployment where you have launched your ARM template, select the Basics tab.
 2. Under the Project details, select the applicable Subscription and Resource group. The Subscription and Resource group should be the same as the ones where your license files are stored.
@@ -240,7 +240,7 @@ a. Select the FortiADC-VM in the HA group. For example, the FAD-HA-example-vm1.
 b. In the **Support + troubleshooting** section, select **Serial console**.
 ![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/ha_init_done.png?raw=true)
 
-## Example: FortiADC HA with L7 VS Topology using Azure Load Balancer
+### Example: FortiADC HA with L7 VS Topology using Azure Load Balancer
 ![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l7_vs_azure_ha_topology.png?raw=true)
 
 After you have deployed the ARM template, you will see the following objects in your resource group (this list
@@ -249,7 +249,7 @@ includes only a small subset of all the objects you will see):
 - Azure Virtual Network (FadcHAOutsideSubnet/FadcHAInsideSubnet)
 - 2 FortiADC-VMs (FAD-HA-VM1 and FAD-HA-VM2) The FortiADC nodes are already configured with HA VRRP.
 
-### Creating an L7 virtual server to allow user access to protected resources from the internet
+#### Creating an L7 virtual server to allow user access to protected resources from the internet
 
 Follow the steps below to create an L7 virtual server to let the user access the protected resources from the internet.
 In this example, we assume the following:
@@ -290,7 +290,7 @@ We only support the ALB default route type. We also reference the azure loadbala
 8. Try to connect to https://51.x.x.x to get apache tomcat service
 ![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l7-vs-https-tomcat.png?raw=true)
 
-## Example: FortiADC HA with L4 VS Topology using Azure Load Balancer
+### Example: FortiADC HA with L4 VS Topology using Azure Load Balancer
 To be continued...
 
 
