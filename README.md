@@ -1,6 +1,7 @@
 # FortiADC HA
 
 This project contains the code and templates for the **Microsoft Azure** FortiADC HA deployments.
+This template supports deploying the FortiADC VRRP HA Pair with Azure Load Balancers.
 
 ## Azure Portal
 
@@ -88,10 +89,10 @@ With FortiADC nodes. When a health check fails to one of the nodes in the HA clu
 
 :exclamation: *For FortiADC version 6.2.0 or above, the VRRP HA deployment mode using Azure API call is no longer supported for virtual server IP and interface floating IP. An Azure Load Balancer is required for deploying HA for these IP configurations.*
 
-### What is Azure Load Balancer?
-Acting as the single p this new design, the independent configuration of the virtual server IP on both FortiADCs would now be using Azure Load Balancers to provide the single access point for customers in the event of HAfailover. 
+### Why using Azure Load Balancer?
+The independent configuration of the virtual server IP on both FortiADCs would now be using Azure Load Balancers to provide the single access point for customers in the event of HAfailover. 
 
-The Azure Load Balancer publishes the IP address used by customers and it will balance the traffic between the oint of contact for clients, Azure Load Balancer (ALB) distributes inbound flows that arrive at the load balancer's front end to backend pool instances. For deploying the FortiADC VRRP HA, the ALB distributes the inbound traffic to the FortiADC units (the backend pool instances). These flows are determined according toconfigured load-balancing rules and health probes.
+The Azure Load Balancer publishes the IP address used by customers, providing the single point of contact for clients. Azure Load Balancer (ALB) distributes inbound flows that arrive at the load balancer's front end to backend pool instances. For deploying the FortiADC VRRP HA, the ALB distributes the inbound traffic to the FortiADC units (the backend pool instances). These flows are determined according toconfigured load-balancing rules and health probes.
 
 ALB provides flexibility in defining the load-balancing rules. The function of the load-balancing rule is to declare how an address and port on the front end would be mapped to the destination address and port on the backend.
 
@@ -180,6 +181,7 @@ After you have successfully launched your ARM template, configure the following 
 | Tenant Id  | Apply the tenant ID. |
 | Restapp Id |  Apply the restapp ID. |
 | Restapp Secret |  Apply the restapp secret. |
+| Region   | Azure server region. |
 | Resource Name Prefix | Specify a prefix for the resources to be deployed. The names of the resources will contain the specified prefix. |
 | Vm Sku | Specify the FortiADC-VM instance types. Select from the following instance types: Standard_F2s_v2/Standard_F4s_v2/Standard_F8s_v2/Standard_F16s_v2/Standard_F32s_v2. To ensure high performance, it is recommended to deploy a VM instance with at least 2 vCPUs and 8 GB memory. If you are using BYOL licensing type, specify an instance type that matches your FortiADC-VM licenses. For example, if your FortiADC-VM license supports 4 vCPUs, you can choose from the instance types that have 4 vCPUs. |
 | FAD Admin Username |  Enter an administrator username for the FortiADC instances. Note: The username cannot be "admin" or "root".|
@@ -187,7 +189,7 @@ After you have successfully launched your ARM template, configure the following 
 | FAD Image |  Type Select BYOL or PAYG. |
 | FAD Image Version | Select the image version of FortiADC-VMs. It is recommended to deploy the latest version. |
 | FAD Count | Specify the number of virtual machines to be created in the HA group. The minimum is 1 and maximum is 2; the default is 2. |
-|Vnet | New Or Existing Select whether to use a new or existing virtual network. |
+|Vnet New Or Existing | Select whether to use a new or existing virtual network. |
 | Vnet Resource Group | If you selected existing for Vnet New Or Existing, then specify the resource group to which the existing virtual network belongs. |
 | Vnet Name |  Specify a name for the new virtual network or enter the name of the existing virtual network. |
 | Vnet Address Prefix | Specify the virtual network address prefix. For example, 10.2.0.0/16. |
@@ -215,9 +217,9 @@ After you have successfully launched your ARM template, configure the following 
 | FAD-HA-example-vm1 | FortiADC in the HA group.|
 | FAD-HA-example-vm2 | FortiADC in the HA group. |
 |FAD-HA-example-external-nic1 | External interface of the FAD-HA-example-vm1 for external access.|
-| FAD-HA-example-internal-nic1 | Internal interface of the FAD-HA-example-vm1 for internal access to the protected server. This is also used as the HA VRRP Unicast IP. |
+| FAD-HA-example-internal-nic1 | Internal interface of the FAD-HA-example-vm1 for internal access to the protected server. The primary IP of this network interface is also used as the HA VRRP unicast IP. |
 | FAD-HA-example-external-nic2 | External interface of the FAD-HA-example-vm2 for external access. | 
-| FAD-HA-example-internal-nic2 | Internal interface of the FAD-HA-example-vm2 for internal access to the protected server. This is also used as the HA VRRP Unicast IP. |
+| FAD-HA-example-internal-nic2 | Internal interface of the FAD-HA-example-vm2 for internal access to the protected server. The primary IP of this network interface is also used as the HA VRRP unicast IP.. |
 | FAD-HA-example-loadbalance-internal |  Internal Azure Load Balancer. This is used in the FortiADC L4 virtual server topology. For more information, see Example: FortiADC HA with L4 VS Topology using Azure Load Balancer. |
 | FAD-HA-example-loadbalance-external | External Azure Load Balancer. This provides the single access endpoint for the FortiADC virtual servers. |
 | FAD-HA-example-nicPublic-IP1 | Provides public access to the FAD-HA-example-vm1.|
@@ -275,6 +277,7 @@ a. Configure the backend pool IP information of the FAD-HA-loadbalance-external 
 ![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/adc-lb-backend-ip2.png?raw=true)
 b. Configure the probing VS which references the ext-FADHaLBBackendAddrPool-1 as the virtual server
 IP. Set the probing VS with port 8080 and profile LB_PROF_TCP according to the tcpprobe as defined in the Health Probes of FAD-HA-loadbalance-external.
+
 :warning: For FortiADC version 6.2.1 or later, LB_PROF_TCP is deprecated. Please use LB_PROF_L7_TCP instead.
 ![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/probing_vs.png?raw=true)
 Now, we have the probing VS using FADHaLBBackendAddrPOOL IP on both FortiADC-VMs.
@@ -291,8 +294,50 @@ We only support the ALB default route type. We also reference the azure loadbala
 ![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l7-vs-https-tomcat.png?raw=true)
 
 ### Example: FortiADC HA with L4 VS Topology using Azure Load Balancer
-To be continued...
 
+Typically, an L4 virtual server using DNAT as the packet forwarding method requires the backend real server to have a route back to FortiADC. For this, the FortiADC uses the floating IP in the network interface as the default gateway for the backend real server.
+
+In the Azure platform, the floating IP needs to be migrated in the event of an HA failover by using an Azure API call. To avoid the issues caused by the IP migration process, the internal Azure Load Balancer was introduced into the design.
+
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4_vs_azure_ha_topology.png?raw=true)
+
+> Figure 5 FortiADC HA using Azure Load Balancer for L4 VS using DNAT topology
+
+The Figure 5 example above shows the business traffic flow from the client → external ALB (FAD-HA-loadbalance-external) → the working FortiADC in HA VRRP mode → Ubuntu Apache web server → internal
+ALB (FAD-HA-loadbalance-internal) → the working FortiADC in HA VRRPmode → external ALB (FAD-HA-
+loadbalance-external) → the client.
+
+In this deployment, we use the front end IP of the internal Azure Load Balancer instead of the floating IP in the
+FortiADC network interface as the web server default gateway. By doing so, there is no need to migrate the
+floating IP during an HA failover.
+
+#### Creating an L4 virtual server using DNAT as the packet forwarding method with Azure Load Balancer
+
+Similar to the steps taken for the Example: FortiADC HA with L7 VS Topology using Azure Load Balancer, follow the steps below to build an L4 virtual server using DNAT as the packet forwarding method on FortiADC. 
+
+1. Create the L4 virtual server on FortiADC and add the corresponding Load balancing rule on the external ALB, FAD-HA loadbalance-external.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4-vs.png?raw=true)
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_extlbrule.png?raw=true)
+2. Check the inbound rule to allow access to port 1235 in the security group FAD-HA-Security-Group that is attached to both the FortiADC-VMs' network interface in the FadcHAOutsideSubnet.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_secgrp.png?raw=true)
+3. In the FAD-HA-loadbalance-internal, check the front end IP, which is the default gateway for the backend web server.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/internal-lb-frotend.png?raw=true)
+4. Check the default route gateway of the backend web server. In this example, we use the Ubuntu Apache2 server as the backend web server. The default gateway should be configured to 10.2.1.6 to ensure the responding business traffic will go through the internal ALB, FAD-HA-loadbalance-internal.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_routetable_protectedserver.png?raw=true)
+Check the route table attached to the FadcHAInsideSubnet on Azure Cloud.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_routetable_attach.png?raw=true)
+If you are using the ARM template to create the FortiADC HA pair with an **existing** network, you will need to manually associate the route table FAD-HARouteTable-FadcHAInsideSubnet to FadcHAInsideSubnet
+5. Check the Backend pools of FAD-HA-loadbalance-internal and add the ALB backend configuration on both FortiADC-VMs
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/internal-lb-backend.png?raw=true)
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/internal-azure-lb-backend-adc1.png?raw=true)
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/internal-azure-lb-backend-adc2.png?raw=true)
+6. Check the Health Probe of the FAD-HA-loadbalance-internal and add the internal probing VS.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/internal_lb_hc_probe.png?raw=true)
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_probingvs.png?raw=true)
+7. Check the Load balancing rule of FAD-HA-loadbalance-internal. The HA port is enabled so the FAD-HA-loadbalance-internal can load balance on all ports for TCP and UDP protocols. This means that the FAD-HA-loadbalance-internal can accept any TCP and UDP service.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_lbrule.png?raw=true)
+8. Try to connect to the L4 virtual server with http://51.x.x.x:1235 to get an Apache2 Ubuntu default page.
+![](https://github.com/fortinet/fortiadc-azure-ha/blob/main/figures/l4vs_ubuntu.png?raw=true)
 
 ## Support
 
