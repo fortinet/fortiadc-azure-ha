@@ -3,6 +3,8 @@
 This project contains the code and templates for the **Microsoft Azure** FortiADC HA deployments.
 This template supports deploying the FortiADC VRRP HA Pair with Azure Load Balancers.
 
+**:bulb: Please refer to the [official deployment guide](https://docs.fortinet.com/document/fortiadc-public-cloud/latest/deploying-high-availability-on-azure/292773/overview-of-fortiadc-ha-pairing-on-the-azure-platform) for the latest information.**
+
 ## Azure Portal
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffortinet%2Ffortiadc-azure-ha%2Fmain%2Ftemplates%2Fdeploy_fadc_ha.json"
